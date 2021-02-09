@@ -20,13 +20,16 @@ export function configureFakeBackend() {
 
                     if (filteredUsers.length) {
                         // if login details are valid return user details and fake jwt token
+                        filteredUsers[0].loginTime=Date.now();
+                        filteredUsers[0].logoutTime=Date.now();
                         let user = filteredUsers[0];
                         let responseJson = {
                             id: user.id,
                             username: user.username,
                             firstName: user.firstName,
                             lastName: user.lastName,
-                            token: 'fake-jwt-token'
+                            token: 'fake-jwt-token',
+                            role: user.role || 'user',
                         };
                         resolve({ ok: true, text: () => Promise.resolve(JSON.stringify(responseJson)) });
                     } else {
@@ -36,12 +39,28 @@ export function configureFakeBackend() {
 
                     return;
                 }
-
                 // get users
-                if (url.endsWith('/users') && opts.method === 'GET') {
+                if (url.match(/\/audit\?page\=([\w]+|[\d]+)$/) && opts.method === 'GET') {
                     // check for fake auth token in header and return users if valid, this security is implemented server side in a real application
                     if (opts.headers && opts.headers.Authorization === 'Bearer fake-jwt-token') {
-                        resolve({ ok: true, text: () => Promise.resolve(JSON.stringify(users))});
+                        let urlParts = url.split('=');
+                        let pageNo = parseInt(urlParts[urlParts.length - 1]);
+                        let totalRecords = users.length;
+                        let page ={
+                            pageSize:10,
+                            totalPages:0,
+                            startIndex:0,
+                            endIndex:0,
+                            currentPage:pageNo,
+                            totalRecords
+                        }
+                        page.totalPages = Math.ceil(totalRecords/page.pageSize);
+                        if(pageNo==='All') resolve({ ok: true, text: () => Promise.resolve(JSON.stringify(users))});
+                        if(pageNo<=0 && pageNo>totalPages) reject('No Records more');
+                        page.startIndex=page.pageSize*(pageNo-1)+1;
+                        page.endIndex=pageNo*page.pageSize;
+                        let showingRecord=users.slice(page.startIndex-1,page.endIndex);
+                        resolve({ ok: true, text: () => Promise.resolve(JSON.stringify({data:showingRecord,page}))});
                     } else {
                         // return 401 not authorised if token is null or invalid
                         reject('Unauthorised');

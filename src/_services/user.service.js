@@ -1,6 +1,5 @@
 import config from 'config';
 import { authHeader } from '../_helpers';
-
 export const userService = {
     login,
     logout,
@@ -8,14 +7,15 @@ export const userService = {
     getAll,
     getById,
     update,
-    delete: _delete
+    delete: _delete,
+    get currentUserValue () { return JSON.parse(localStorage.getItem('user')) }
 };
 
-function login(username, password) {
+function login(username, password, role) {
     const requestOptions = {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ username, password })
+        body: JSON.stringify({ username, password, role })
     };
 
     return fetch(`${config.apiUrl}/users/authenticate`, requestOptions)
@@ -28,18 +28,29 @@ function login(username, password) {
         });
 }
 
-function logout() {
+function logout(id) {
     // remove user from local storage to log user out
-    localStorage.removeItem('user');
+    // handling logout, updating logout time
+    const requestOptions = {
+        method: 'PUT',
+        headers: authHeader()
+    };
+    return fetch(`${config.apiUrl}/users/authenticate?logout=${id}`, requestOptions)
+        .then(res => {
+            //remove details from localstorage
+            localStorage.removeItem('user');
+            return {};
+        });
+    
 }
 
-function getAll() {
+function getAll(pageNo) {
     const requestOptions = {
         method: 'GET',
         headers: authHeader()
     };
 
-    return fetch(`${config.apiUrl}/users`, requestOptions).then(handleResponse);
+    return fetch(`${config.apiUrl}/audit?page=${pageNo}`, requestOptions).then(handleResponse);
 }
 
 function getById(id) {

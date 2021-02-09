@@ -1,17 +1,21 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { connect } from 'react-redux';
-
 import { userActions } from '../_actions';
+import {userService} from "../_services";
+
 
 class LoginPage extends React.Component {
     constructor(props) {
         super(props);
 
         // reset login status
-        this.props.logout();
+        let user = userService.currentUserValue;
+        if(user)
+            this.props.logout(user._id);
 
         this.state = {
+            role: 'User',
             username: '',
             password: '',
             submitted: false
@@ -30,19 +34,26 @@ class LoginPage extends React.Component {
         e.preventDefault();
 
         this.setState({ submitted: true });
-        const { username, password } = this.state;
+        const { username, password, role } = this.state;
         if (username && password) {
-            this.props.login(username, password);
+            this.props.login(username, password, role);
         }
     }
 
     render() {
         const { loggingIn } = this.props;
-        const { username, password, submitted } = this.state;
+        const { username, password, submitted, role } = this.state;
         return (
             <div className="col-md-6 col-md-offset-3">
                 <h2>Login</h2>
                 <form name="form" onSubmit={this.handleSubmit}>
+                    <div className={'form-group' + (submitted && !username ? ' has-error' : '')}>
+                        <label htmlFor="role">Choose role</label>
+                        <select className="form-control" name="role" value={role} onChange={this.handleChange}>
+                            <option value="User" active>User</option>
+                            <option value="Auditor">Auditor</option>
+                        </select>
+                    </div>
                     <div className={'form-group' + (submitted && !username ? ' has-error' : '')}>
                         <label htmlFor="username">Username</label>
                         <input type="text" className="form-control" name="username" value={username} onChange={this.handleChange} />

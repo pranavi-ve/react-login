@@ -11,11 +11,11 @@ export const userActions = {
     delete: _delete
 };
 
-function login(username, password) {
+function login(username, password, role) {
     return dispatch => {
         dispatch(request({ username }));
 
-        userService.login(username, password)
+        userService.login(username, password, role)
             .then(
                 user => { 
                     dispatch(success(user));
@@ -33,8 +33,8 @@ function login(username, password) {
     function failure(error) { return { type: userConstants.LOGIN_FAILURE, error } }
 }
 
-function logout() {
-    userService.logout();
+function logout(id) {
+    userService.logout(id);
     return { type: userConstants.LOGOUT };
 }
 
@@ -61,11 +61,10 @@ function register(user) {
     function failure(error) { return { type: userConstants.REGISTER_FAILURE, error } }
 }
 
-function getAll() {
+function getAll(pageNo='All') {
     return dispatch => {
         dispatch(request());
-
-        userService.getAll()
+        userService.getAll(pageNo)
             .then(
                 users => dispatch(success(users)),
                 error => dispatch(failure(error.toString()))
